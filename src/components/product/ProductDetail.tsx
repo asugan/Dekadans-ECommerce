@@ -22,10 +22,14 @@ interface Inventory {
 
 interface ProductReview {
   id: string
+  userId: string
+  productId: string
   rating: number
-  title?: string
-  comment?: string
-  createdAt: string
+  title: string | null
+  comment: string | null
+  isApproved: boolean
+  createdAt: Date
+  updatedAt: Date
   user: {
     name: string
   }
@@ -58,8 +62,6 @@ interface ProductDetailProps {
 
 export default function ProductDetail({ product }: ProductDetailProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
-
-  const mainImage = product.images?.[selectedImageIndex]
 
   return (
     <div className="min-h-screen bg-gray-50">

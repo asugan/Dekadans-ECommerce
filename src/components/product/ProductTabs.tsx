@@ -18,10 +18,14 @@ interface Inventory {
 
 interface ProductReview {
   id: string
+  userId: string
+  productId: string
   rating: number
-  title?: string
-  comment?: string
-  createdAt: string
+  title: string | null
+  comment: string | null
+  isApproved: boolean
+  createdAt: Date
+  updatedAt: Date
   user: {
     name: string
   }
