@@ -1,0 +1,26 @@
+{
+  "projectName": "dekadans-eticaret",
+  "mode": "file-router",
+  "typescript": true,
+  "tailwind": true,
+  "packageManager": "npm",
+  "addOnOptions": {
+    "prisma": {
+      "database": "sqlite"
+    }
+  },
+  "git": true,
+  "version": 1,
+  "framework": "react-cra",
+  "chosenAddOns": [
+    "biome",
+    "start",
+    "prisma",
+    "form",
+    "tRPC",
+    "shadcn",
+    "t3env",
+    "tanstack-query",
+    "store"
+  ]
+}
