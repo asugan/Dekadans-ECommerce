@@ -1,5 +1,4 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { TRPCProvider } from '@/integrations/trpc/react'
 import { HomeContent } from '@/components/HomeContent'
 
 export const Route = createFileRoute('/')({
@@ -30,8 +29,6 @@ export const Route = createFileRoute('/')({
 
 function App() {
   return (
-    <TRPCProvider>
-      <HomeContent />
-    </TRPCProvider>
+    <HomeContent />
   )
 }
