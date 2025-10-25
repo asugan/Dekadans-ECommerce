@@ -1,10 +1,10 @@
 import { useTRPC } from '@/integrations/trpc/react'
+import { useQuery } from '@tanstack/react-query'
 import CategoryCard from '@/components/CategoryCard'
 import ProductCard from '@/components/ProductCard'
 import {
   ShoppingCart,
   Package,
-  Star,
   Truck,
   Shield,
   RefreshCw,
@@ -13,7 +13,6 @@ import {
   MapPin,
   ChevronRight,
   Sparkles,
-  TrendingUp,
   Clock
 } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
@@ -21,10 +20,35 @@ import { Link } from '@tanstack/react-router'
 export function HomeContent() {
   const trpc = useTRPC()
 
-  // Fetch categories and products
-  const { data: categories, isLoading: categoriesLoading } = trpc.categories.list.useQuery()
-  const { data: featuredProducts, isLoading: featuredLoading } = trpc.products.featured.useQuery({ limit: 8 })
-  const { data: recentProducts, isLoading: recentLoading } = trpc.products.list.useQuery({ limit: 8 })
+  // Fetch categories and products using proper TanStack Start pattern
+  const categoriesQuery = useQuery(trpc.categories.list.queryOptions())
+  const featuredProductsQuery = useQuery(trpc.products.featured.queryOptions({ limit: 8 }))
+  const recentProductsQuery = useQuery(trpc.products.list.queryOptions({ limit: 8 }))
+
+  // Transform data to match component interfaces
+  const categories = categoriesQuery.data?.map(category => ({
+    ...category,
+    description: category.description || undefined,
+    image: category.image || undefined
+  }))
+
+  const featuredProducts = featuredProductsQuery.data?.map(product => ({
+    ...product,
+    description: product.description || undefined,
+    shortDesc: product.shortDesc || undefined,
+    comparePrice: product.comparePrice ? Number(product.comparePrice) : undefined,
+    price: Number(product.price),
+    sku: product.sku || undefined
+  }))
+
+  const recentProducts = recentProductsQuery.data?.products?.map(product => ({
+    ...product,
+    description: product.description || undefined,
+    shortDesc: product.shortDesc || undefined,
+    comparePrice: product.comparePrice ? Number(product.comparePrice) : undefined,
+    price: Number(product.price),
+    sku: product.sku || undefined
+  }))
 
   const features = [
     {
@@ -52,7 +76,7 @@ export function HomeContent() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-r from-cyan-600 to-blue-600 text-white">
+      <section className="relative bg-linear-to-r from-cyan-600 to-blue-600 text-white">
         <div className="absolute inset-0 bg-black/10"></div>
         <div className="relative max-w-7xl mx-auto px-4 py-16 md:py-24">
           <div className="text-center">
@@ -66,14 +90,14 @@ export function HomeContent() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                to="/kategoriler"
+                to="/"
                 className="px-8 py-3 bg-white text-cyan-600 font-semibold rounded-lg hover:bg-gray-100 transition-colors shadow-lg flex items-center justify-center gap-2"
               >
                 <ShoppingCart size={20} />
                 Alışverişe Başla
               </Link>
               <Link
-                to="/urunler/ozel-kampanyalar"
+                to="/"
                 className="px-8 py-3 bg-yellow-400 text-gray-900 font-semibold rounded-lg hover:bg-yellow-300 transition-colors shadow-lg flex items-center justify-center gap-2"
               >
                 <Sparkles size={20} />
@@ -115,7 +139,7 @@ export function HomeContent() {
             </p>
           </div>
 
-          {categoriesLoading ? (
+          {categoriesQuery.isLoading ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {[...Array(8)].map((_, index) => (
                 <div key={index} className="bg-gray-200 rounded-lg aspect-square animate-pulse"></div>
@@ -141,7 +165,7 @@ export function HomeContent() {
           {categories && categories.length > 8 && (
             <div className="text-center mt-8">
               <Link
-                to="/kategoriler"
+                to="/"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-cyan-600 text-white font-medium rounded-lg hover:bg-cyan-700 transition-colors"
               >
                 Tüm Kategorileri Gör
@@ -186,7 +210,7 @@ export function HomeContent() {
               </p>
             </div>
             <Link
-              to="/urunler/ozel-kampanyalar"
+              to="/"
               className="flex items-center gap-2 text-cyan-600 hover:text-cyan-700 font-medium transition-colors"
             >
               Tümünü Gör
@@ -194,10 +218,10 @@ export function HomeContent() {
             </Link>
           </div>
 
-          {featuredLoading ? (
+          {featuredProductsQuery.isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {[...Array(8)].map((_, index) => (
-                <div key={index} className="bg-gray-200 rounded-lg aspect-[3/4] animate-pulse"></div>
+                <div key={index} className="bg-gray-200 rounded-lg aspect-3/4 animate-pulse"></div>
               ))}
             </div>
           ) : featuredProducts && featuredProducts.length > 0 ? (
@@ -232,7 +256,7 @@ export function HomeContent() {
               </p>
             </div>
             <Link
-              to="/urunler/yeni-eklenenler"
+              to="/"
               className="flex items-center gap-2 text-cyan-600 hover:text-cyan-700 font-medium transition-colors"
             >
               Tümünü Gör
@@ -240,15 +264,15 @@ export function HomeContent() {
             </Link>
           </div>
 
-          {recentLoading ? (
+          {recentProductsQuery.isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {[...Array(8)].map((_, index) => (
-                <div key={index} className="bg-gray-200 rounded-lg aspect-[3/4] animate-pulse"></div>
+                <div key={index} className="bg-gray-200 rounded-lg aspect-3/4 animate-pulse"></div>
               ))}
             </div>
-          ) : recentProducts && recentProducts.products && recentProducts.products.length > 0 ? (
+          ) : recentProducts && recentProducts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {recentProducts.products.slice(0, 8).map((product) => (
+              {recentProducts.slice(0, 8).map((product) => (
                 <ProductCard
                   key={product.id}
                   product={product}
@@ -266,7 +290,7 @@ export function HomeContent() {
       </section>
 
       {/* Newsletter Section */}
-      <section className="py-16 bg-gradient-to-r from-cyan-600 to-blue-600 text-white">
+      <section className="py-16 bg-linear-to-r from-cyan-600 to-blue-600 text-white">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <Mail className="w-16 h-16 text-yellow-300 mx-auto mb-6" />
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
