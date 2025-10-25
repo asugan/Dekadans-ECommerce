@@ -204,8 +204,169 @@ const productsRouter = {
     }),
 } satisfies TRPCRouterRecord
 
+// Reviews Router
+const reviewsRouter = {
+  getByProduct: publicProcedure
+    .input(z.object({
+      productId: z.string(),
+      limit: z.number().min(1).max(50).optional().default(20),
+      offset: z.number().min(0).optional().default(0),
+      rating: z.number().min(1).max(5).optional()
+    }))
+    .query(async ({ input }) => {
+      const where = {
+        productId: input.productId,
+        isApproved: true,
+        ...(input.rating && { rating: input.rating })
+      }
+
+      const [reviews, total] = await Promise.all([
+        prisma.productReview.findMany({
+          where,
+          include: {
+            user: {
+              select: {
+                name: true
+              }
+            }
+          },
+          orderBy: { createdAt: 'desc' },
+          take: input.limit,
+          skip: input.offset
+        }),
+        prisma.productReview.count({ where })
+      ])
+
+      return {
+        reviews,
+        total,
+        hasMore: total > input.offset + input.limit
+      }
+    }),
+
+  getRatingDistribution: publicProcedure
+    .input(z.object({ productId: z.string() }))
+    .query(async ({ input }) => {
+      const distribution = await prisma.productReview.groupBy({
+        by: ['rating'],
+        where: {
+          productId: input.productId,
+          isApproved: true
+        },
+        _count: {
+          rating: true
+        }
+      })
+
+      const result = [5, 4, 3, 2, 1].map(rating => {
+        const found = distribution.find(d => d.rating === rating)
+        return {
+          rating,
+          count: found?._count.rating || 0
+        }
+      })
+
+      const totalReviews = result.reduce((sum, item) => sum + item.count, 0)
+      const averageRating = totalReviews > 0
+        ? result.reduce((sum, item) => sum + (item.rating * item.count), 0) / totalReviews
+        : 0
+
+      return {
+        distribution,
+        totalReviews,
+        averageRating
+      }
+    }),
+
+  create: publicProcedure
+    .input(z.object({
+      productId: z.string(),
+      userId: z.string(),
+      rating: z.number().min(1).max(5),
+      title: z.string().optional(),
+      comment: z.string().optional()
+    }))
+    .mutation(async ({ input }) => {
+      const review = await prisma.productReview.create({
+        data: {
+          ...input,
+          isApproved: false // Reviews need approval
+        },
+        include: {
+          user: {
+            select: {
+              name: true
+            }
+          }
+        }
+      })
+
+      return review
+    })
+} satisfies TRPCRouterRecord
+
+// Questions Router
+const questionsRouter = {
+  getByProduct: publicProcedure
+    .input(z.object({
+      productId: z.string(),
+      limit: z.number().min(1).max(50).optional().default(20),
+      offset: z.number().min(0).optional().default(0)
+    }))
+    .query(async ({ input }) => {
+      const [questions, total] = await Promise.all([
+        prisma.productQuestion.findMany({
+          where: { productId: input.productId },
+          include: {
+            user: {
+              select: {
+                name: true
+              }
+            }
+          },
+          orderBy: { createdAt: 'desc' },
+          take: input.limit,
+          skip: input.offset
+        }),
+        prisma.productQuestion.count({ where: { productId: input.productId } })
+      ])
+
+      return {
+        questions,
+        total,
+        hasMore: total > input.offset + input.limit
+      }
+    }),
+
+  create: publicProcedure
+    .input(z.object({
+      productId: z.string(),
+      userId: z.string(),
+      question: z.string().min(1)
+    }))
+    .mutation(async ({ input }) => {
+      const question = await prisma.productQuestion.create({
+        data: {
+          ...input,
+          isApproved: false
+        },
+        include: {
+          user: {
+            select: {
+              name: true
+            }
+          }
+        }
+      })
+
+      return question
+    })
+} satisfies TRPCRouterRecord
+
 export const trpcRouter = createTRPCRouter({
   categories: categoriesRouter,
   products: productsRouter,
+  reviews: reviewsRouter,
+  questions: questionsRouter,
 })
 export type TRPCRouter = typeof trpcRouter
